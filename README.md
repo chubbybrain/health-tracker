@@ -2,20 +2,26 @@
 
 AI-assisted daily schedule tracker for the **40lb Weight Loss Program**. Built for progressive adaptation based on daily completion and notes.
 
-## 🌐 Live Demo
+## 🚀 **Live Deployments**
 
-**GitHub Pages:** https://chubbybrain.github.io/health-tracker/  
-**Local Server:** https://184-107-106-29.sslip.io/
+- **Primary (with sync):** https://184-107-106-29.sslip.io/
+- **GitHub Pages (static only):** https://chubbybrain.github.io/health-tracker/
+- **API Backend:** https://184-107-106-29.sslip.io/api/
+
+> **Note:** The GitHub Pages deployment uses localStorage only (no sync). For cross-device sync, use the primary deployment above which connects to the Node.js backend.
 
 ## ✨ Features
 
 - **📅 2-Week Schedule** — 387 detailed schedule items with 15-minute precision
 - **✅ Completion Tracking** — Check off items as you complete them
+- **⏱️ Timestamps** — Track when tasks were actually completed
+- **🔄 Cross-Device Sync** — State persists across browsers/devices via API backend
 - **📝 Notes System** — Leave notes for each item (diet variations, workout performance, energy levels)
 - **📊 Real-time Progress** — See daily completion percentage and stats
 - **📤 AI Export** — Export notes as JSON for AI analysis and daily plan adaptation
-- **💾 LocalStorage Persistence** — All data saved locally in your browser
+- **💾 Offline Fallback** — LocalStorage backup when server unreachable
 - **📱 Mobile Responsive** — Works on phone, tablet, and desktop
+- **🚀 Auto-scroll** — Automatically scrolls to next unchecked item
 
 ## 🎯 How It Works
 
@@ -36,20 +42,25 @@ AI-assisted daily schedule tracker for the **40lb Weight Loss Program**. Built f
 4. Update schedule data with new plan
 5. Track progression milestones
 
-## 🛠️ Technical Stack
+## 🛠️ Tech Stack
 
-- **Frontend:** Pure HTML/CSS/JavaScript (no framework dependencies)
-- **Storage:** Browser LocalStorage
+- **Frontend:** Vanilla HTML/CSS/JavaScript (no frameworks)
+- **Backend:** Node.js + Express + SQLite
+- **Storage:** SQLite database (primary) + Browser LocalStorage (fallback)
 - **Data Format:** JSON schedule with metadata
-- **Hosting:** GitHub Pages + Local HTTPS server (Caddy)
+- **Hosting:** Self-hosted HTTPS server (Caddy) + GitHub Pages (static)
 
 ## 📦 Files
 
 ```
 /
-├── index.html           # Main web app (17KB)
+├── index.html           # Main web app (20KB) with API sync
 ├── schedule_data.json   # 2-week schedule (97KB, 387 items)
-└── README.md           # This file
+├── server.js           # Node.js API backend (6KB)
+├── package.json        # Node dependencies
+├── README.md           # Project overview
+├── BACKEND.md          # Backend setup & API docs
+└── USAGE.md            # User guide
 ```
 
 ## 🔄 Workflow
