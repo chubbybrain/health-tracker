@@ -465,6 +465,28 @@
             completionState[key] = !completionState[key];
             saveState();
             showDay(currentDay); // Refresh view
+            
+            // Auto-scroll to next unchecked item
+            if (completionState[key]) {
+                setTimeout(() => {
+                    scrollToNextUnchecked();
+                }, 100);
+            }
+        }
+        
+        // Scroll to next unchecked item
+        function scrollToNextUnchecked() {
+            const items = document.querySelectorAll('.schedule-item');
+            for (let item of items) {
+                const checkbox = item.querySelector('.checkbox');
+                if (checkbox && !checkbox.checked) {
+                    item.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    break;
+                }
+            }
         }
 
         // Update notes
