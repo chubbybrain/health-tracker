@@ -228,24 +228,6 @@
             margin-top: 0.25rem;
         }
 
-        .export-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-top: 1rem;
-            width: 100%;
-            transition: background 0.2s;
-        }
-
-        .export-btn:hover {
-            background: var(--primary-dark);
-        }
-
         .empty-state {
             text-align: center;
             padding: 3rem 1rem;
@@ -509,14 +491,12 @@
             <div class="loading">Loading schedule...</div>
         </div>
 
-            <button class="export-btn" id="export-btn">📤 Export Notes for AI Analysis</button>
-
             <div class="ai-context">
                 <div class="ai-context-title">💡 How This Works</div>
                 <div class="ai-context-text">
                     Check off completed items and leave notes throughout the day. 
-                    Click "Export Notes" to generate a summary that your AI assistant 
-                    (Cléo) will use to adapt tomorrow's plan and track your progression.
+                    Every night at 3:00 AM, your progress is automatically analyzed by AI. 
+                    Check the <strong>Yesterday</strong> tab each morning to see your summary and personalized insights.
                 </div>
             </div>
         </div>
@@ -529,7 +509,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <strong>Version 2.1.0</strong> (Added Yesterday Summary) • Last Updated: Aug 10, 2026 @ 03:00 UTC
+            <div class="version">Version 2.1.1 (Removed Manual Export) • Last Updated: Aug 10, 2026 @ 03:15 UTC</div>
         </div>
     </div>
 
@@ -936,62 +916,6 @@
             document.getElementById('stat-remaining').textContent = total - completed;
             document.getElementById('progress-fill').style.width = `${progress}%`;
         }
-
-        // Export notes for AI
-        function exportNotes() {
-            const exportData = {
-                exportDate: new Date().toISOString(),
-                currentDay: currentDay,
-                summary: {
-                    totalItems: scheduleData.schedule.length,
-                    completedItems: Object.values(completionState).filter(Boolean).length,
-                    notesCount: Object.keys(notes).filter(k => notes[k].trim()).length
-                },
-                dailyBreakdown: []
-            };
-
-            // Group by day
-            for (let day = 1; day <= scheduleData.meta.total_days; day++) {
-                const dayItems = scheduleData.schedule.filter(item => 
-                    parseInt(item.DayNumber) === day
-                );
-                
-                const dayData = {
-                    day: day,
-                    date: dayItems[0]?.Date || '',
-                    items: dayItems.map(item => {
-                        const key = getItemKey(item);
-                        return {
-                            time: item.Time,
-                            activity: item.Activity,
-                            details: item.Details,
-                            completed: completionState[key] || false,
-                            completedAt: completionTimestamps[key] || null,
-                            notes: notes[key] || ''
-                        };
-                    }).filter(item => item.completed || item.notes) // Only export items with data
-                };
-
-                if (dayData.items.length > 0) {
-                    exportData.dailyBreakdown.push(dayData);
-                }
-            }
-
-            // Download as JSON
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], 
-                                 { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `health-tracker-export-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            alert('✅ Notes exported! Share this file with your AI assistant for daily plan adjustments.');
-        }
-
-        // Event listeners
-        document.getElementById('export-btn').addEventListener('click', exportNotes);
 
         // Initialize on load
         loadSchedule();
