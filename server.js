@@ -38,6 +38,15 @@ function initDatabase() {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS daily_summaries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT NOT NULL UNIQUE,
+        day_number INTEGER NOT NULL,
+        summary_text TEXT NOT NULL,
+        stats TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`);
+
     console.log('Database tables initialized');
 }
 
@@ -187,6 +196,59 @@ app.get('/api/export', (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Get daily summary (for Yesterday tab)
+app.get('/api/summary/:date', (req, res) => {
+    const { date } = req.params;
+    
+    db.get(
+        'SELECT * FROM daily_summaries WHERE date = ? ORDER BY created_at DESC LIMIT 1',
+        [date],
+        (err, row) => {
+            if (err) {
+                console.error('Error fetching summary:', err);
+                return res.status(500).json({ error: 'Failed to fetch summary' });
+            }
+            
+            if (!row) {
+                return res.json({ summary: null });
+            }
+            
+            res.json({
+                date: row.date,
+                dayNumber: row.day_number,
+                summary: row.summary_text,
+                stats: row.stats ? JSON.parse(row.stats) : null,
+                createdAt: row.created_at
+            });
+        }
+    );
+});
+
+// Save daily summary (called by cron job)
+app.post('/api/summary', (req, res) => {
+    const { date, dayNumber, summary, stats } = req.body;
+    
+    if (!date || !dayNumber || !summary) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    db.run(
+        `INSERT INTO daily_summaries (date, day_number, summary_text, stats, created_at)
+         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+         ON CONFLICT(date) DO UPDATE SET
+         summary_text = ?, stats = ?, created_at = CURRENT_TIMESTAMP`,
+        [date, dayNumber, summary, JSON.stringify(stats), summary, JSON.stringify(stats)],
+        (err) => {
+            if (err) {
+                console.error('Error saving summary:', err);
+                return res.status(500).json({ error: 'Failed to save summary' });
+            }
+            
+            res.json({ success: true, message: 'Summary saved successfully' });
+        }
+    );
 });
 
 // Start server

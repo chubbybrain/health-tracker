@@ -292,6 +292,181 @@
             font-size: 0.9rem;
             color: #78350f;
         }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Summary Content Styles */
+        .summary-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .summary-header {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .summary-date {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-day {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .summary-content {
+            line-height: 1.8;
+        }
+
+        .summary-content h1,
+        .summary-content h2,
+        .summary-content h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .summary-content h1 {
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .summary-content h2 {
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+
+        .summary-content h3 {
+            font-size: 1.1rem;
+        }
+
+        .summary-content p {
+            margin-bottom: 1rem;
+        }
+
+        .summary-content ul,
+        .summary-content ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        .summary-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-content code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .summary-content pre {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        .summary-content pre code {
+            background: transparent;
+            padding: 0;
+        }
+
+        .summary-content strong {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .summary-content em {
+            font-style: italic;
+        }
+
+        .summary-content blockquote {
+            border-left: 4px solid var(--primary);
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: var(--text-muted);
+        }
+
+        .summary-empty {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .summary-loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 640px) {
+            .tab-btn {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.9rem;
+            }
+
+            .summary-container {
+                padding: 1rem;
+            }
+
+            .summary-content h1 {
+                font-size: 1.25rem;
+            }
+
+            .summary-content h2 {
+                font-size: 1.1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -301,7 +476,15 @@
             <div class="subtitle">40lb Weight Loss Program - 2 Weeks</div>
         </header>
 
-        <div class="stats" id="stats">
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('today')">📅 Today</button>
+            <button class="tab-btn" onclick="switchTab('yesterday')">📊 Yesterday</button>
+        </div>
+
+        <!-- Today Tab -->
+        <div id="tab-today" class="tab-content active">
+            <div class="stats" id="stats">
             <div class="stat-card">
                 <div class="stat-value" id="stat-progress">0%</div>
                 <div class="stat-label">Daily Progress</div>
@@ -326,19 +509,27 @@
             <div class="loading">Loading schedule...</div>
         </div>
 
-        <button class="export-btn" id="export-btn">📤 Export Notes for AI Analysis</button>
+            <button class="export-btn" id="export-btn">📤 Export Notes for AI Analysis</button>
 
-        <div class="ai-context">
-            <div class="ai-context-title">💡 How This Works</div>
-            <div class="ai-context-text">
-                Check off completed items and leave notes throughout the day. 
-                Click "Export Notes" to generate a summary that your AI assistant 
-                (Cléo) will use to adapt tomorrow's plan and track your progression.
+            <div class="ai-context">
+                <div class="ai-context-title">💡 How This Works</div>
+                <div class="ai-context-text">
+                    Check off completed items and leave notes throughout the day. 
+                    Click "Export Notes" to generate a summary that your AI assistant 
+                    (Cléo) will use to adapt tomorrow's plan and track your progression.
+                </div>
+            </div>
+        </div>
+
+        <!-- Yesterday Tab -->
+        <div id="tab-yesterday" class="tab-content">
+            <div id="yesterday-container">
+                <div class="summary-loading">Loading yesterday's summary...</div>
             </div>
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <strong>Version 2.0.1</strong> (Backend Sync Fixed) • Last Updated: Aug 10, 2026 @ 02:38 UTC
+            <strong>Version 2.1.0</strong> (Added Yesterday Summary) • Last Updated: Aug 10, 2026 @ 03:00 UTC
         </div>
     </div>
 
@@ -353,6 +544,155 @@
         let completionTimestamps = {};
         let notes = {};
         let syncInProgress = false;
+        let yesterdaySummary = null;
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // Load yesterday summary if switching to yesterday tab
+            if (tabName === 'yesterday' && !yesterdaySummary) {
+                loadYesterdaySummary();
+            }
+        }
+
+        // Simple markdown to HTML converter
+        function markdownToHTML(markdown) {
+            if (!markdown) return '';
+            
+            let html = markdown
+                // Code blocks
+                .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                // Bold
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                // Italic
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                // Headers
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                // Unordered lists
+                .replace(/^\- (.+)$/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+                // Ordered lists
+                .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+                // Inline code
+                .replace(/`(.+?)`/g, '<code>$1</code>')
+                // Blockquotes
+                .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+                // Line breaks
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            
+            // Wrap in paragraphs if not already wrapped
+            if (!html.startsWith('<')) {
+                html = '<p>' + html + '</p>';
+            }
+            
+            return html;
+        }
+
+        // Load yesterday's summary
+        async function loadYesterdaySummary() {
+            const container = document.getElementById('yesterday-container');
+            
+            if (!scheduleData) {
+                container.innerHTML = '<div class="summary-empty">⚠️ Schedule data not loaded yet</div>';
+                return;
+            }
+
+            // Calculate yesterday's day number
+            const yesterdayDay = currentDay - 1;
+            
+            if (yesterdayDay < 1) {
+                container.innerHTML = '<div class="summary-empty">📅 No previous day available (you\'re on Day 1)</div>';
+                return;
+            }
+
+            // Find yesterday's date from schedule data
+            const yesterdayItems = scheduleData.schedule.filter(item => 
+                parseInt(item.DayNumber) === yesterdayDay
+            );
+            
+            if (yesterdayItems.length === 0) {
+                container.innerHTML = '<div class="summary-empty">⚠️ No schedule data found for yesterday</div>';
+                return;
+            }
+
+            const yesterdayDate = yesterdayItems[0].Date;
+            
+            container.innerHTML = '<div class="summary-loading">Loading summary...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/summary/${yesterdayDate}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                yesterdaySummary = data;
+                
+                renderYesterdaySummary(data);
+            } catch (error) {
+                console.error('Error loading yesterday summary:', error);
+                container.innerHTML = `
+                    <div class="summary-container">
+                        <div class="summary-empty">
+                            ⚠️ Unable to load summary for ${yesterdayDate}
+                            <br><br>
+                            <small>Error: ${error.message}</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Render yesterday's summary
+        function renderYesterdaySummary(data) {
+            const container = document.getElementById('yesterday-container');
+            
+            if (!data.summary) {
+                container.innerHTML = `
+                    <div class="summary-container">
+                        <div class="summary-header">
+                            <div class="summary-date">${data.date}</div>
+                            <div class="summary-day">Day ${data.dayNumber}</div>
+                        </div>
+                        <div class="summary-empty">
+                            📝 No summary available yet
+                            <br><br>
+                            <small>The AI summary will be generated after you complete the day and export your notes.</small>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const htmlContent = markdownToHTML(data.summary);
+            
+            container.innerHTML = `
+                <div class="summary-container">
+                    <div class="summary-header">
+                        <div class="summary-date">${data.date}</div>
+                        <div class="summary-day">Day ${data.dayNumber}</div>
+                    </div>
+                    <div class="summary-content">
+                        ${htmlContent}
+                    </div>
+                </div>
+            `;
+        }
 
         // Load data from API
         async function loadState() {
