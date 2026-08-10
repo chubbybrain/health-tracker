@@ -339,31 +339,81 @@
     </div>
 
     <script>
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname.includes('184-107-106-29')
+            ? 'https://184-107-106-29.sslip.io'
+            : 'https://184-107-106-29.sslip.io';
+        
         let scheduleData = null;
         let currentDay = 1;
         let completionState = {};
         let completionTimestamps = {};
         let notes = {};
+        let syncInProgress = false;
 
-        // Load data from localStorage
-        function loadState() {
-            const saved = localStorage.getItem('healthTrackerState');
-            if (saved) {
-                const state = JSON.parse(saved);
-                completionState = state.completionState || {};
-                completionTimestamps = state.completionTimestamps || {};
-                notes = state.notes || {};
+        // Load data from API
+        async function loadState() {
+            try {
+                const response = await fetch(`${API_BASE}:9001/api/sync`);
+                if (response.ok) {
+                    const data = await response.json();
+                    completionState = data.completionState || {};
+                    completionTimestamps = data.completionTimestamps || {};
+                    notes = data.notes || {};
+                    console.log('State loaded from server');
+                } else {
+                    console.warn('Failed to load state from server, using empty state');
+                }
+            } catch (error) {
+                console.error('Error loading state:', error);
+                // Fallback to localStorage if server is down
+                const saved = localStorage.getItem('healthTrackerState');
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    completionState = state.completionState || {};
+                    completionTimestamps = state.completionTimestamps || {};
+                    notes = state.notes || {};
+                    console.log('Loaded from localStorage (fallback)');
+                }
             }
         }
 
-        // Save data to localStorage
-        function saveState() {
+        // Save data to API
+        async function saveState() {
+            if (syncInProgress) return;
+            
+            syncInProgress = true;
+            
+            // Also save to localStorage as backup
             localStorage.setItem('healthTrackerState', JSON.stringify({
                 completionState,
                 completionTimestamps,
                 notes,
                 lastUpdated: new Date().toISOString()
             }));
+
+            try {
+                const response = await fetch(`${API_BASE}:9001/api/sync`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        completionState,
+                        completionTimestamps,
+                        notes
+                    })
+                });
+
+                if (response.ok) {
+                    console.log('State synced to server');
+                } else {
+                    console.error('Failed to sync to server');
+                }
+            } catch (error) {
+                console.error('Error syncing state:', error);
+            } finally {
+                syncInProgress = false;
+            }
         }
 
         // Fetch schedule data
@@ -371,7 +421,7 @@
             try {
                 const response = await fetch('schedule_data.json');
                 scheduleData = await response.json();
-                loadState();
+                await loadState(); // Wait for state to load from server
                 initDaySelector();
                 showDay(1);
             } catch (error) {
