@@ -336,6 +336,10 @@
                 (Cléo) will use to adapt tomorrow's plan and track your progression.
             </div>
         </div>
+
+        <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
+            <strong>Version 2.0.1</strong> (Backend Sync Fixed) • Last Updated: Aug 10, 2026 @ 02:38 UTC
+        </div>
     </div>
 
     <script>
@@ -353,7 +357,7 @@
         // Load data from API
         async function loadState() {
             try {
-                const response = await fetch(`${API_BASE}:9001/api/sync`);
+                const response = await fetch(`${API_BASE}/api/sync`);
                 if (response.ok) {
                     const data = await response.json();
                     completionState = data.completionState || {};
@@ -392,7 +396,7 @@
             }));
 
             try {
-                const response = await fetch(`${API_BASE}:9001/api/sync`, {
+                const response = await fetch(`${API_BASE}/api/sync`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
