@@ -399,7 +399,7 @@
 
             // Filter schedule items for this day
             const dayItems = scheduleData.schedule.filter(item => 
-                parseInt(item.Day) === day
+                parseInt(item.DayNumber) === day
             );
 
             renderSchedule(dayItems);
@@ -409,7 +409,7 @@
         // Check if a day is complete
         function isDayComplete(day) {
             const dayItems = scheduleData.schedule.filter(item => 
-                parseInt(item.Day) === day
+                parseInt(item.DayNumber) === day
             );
             const completed = dayItems.filter(item => 
                 completionState[getItemKey(item)]
@@ -419,7 +419,7 @@
 
         // Generate unique key for an item
         function getItemKey(item) {
-            return `${item.Day}_${item.Time}_${item.Activity}`;
+            return `${item.DayNumber}_${item.Time}_${item.Activity}`;
         }
 
         // Render schedule items
@@ -503,7 +503,7 @@
             // Group by day
             for (let day = 1; day <= scheduleData.meta.total_days; day++) {
                 const dayItems = scheduleData.schedule.filter(item => 
-                    parseInt(item.Day) === day
+                    parseInt(item.DayNumber) === day
                 );
                 
                 const dayData = {
