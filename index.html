@@ -147,6 +147,15 @@
             color: var(--text-muted);
             font-size: 0.9rem;
             margin-top: 0.25rem;
+            line-height: 1.4;
+        }
+        
+        .item-timestamp {
+            color: var(--success);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            font-weight: 500;
+            font-style: italic;
         }
 
         .notes-section {
@@ -333,6 +342,7 @@
         let scheduleData = null;
         let currentDay = 1;
         let completionState = {};
+        let completionTimestamps = {};
         let notes = {};
 
         // Load data from localStorage
@@ -341,6 +351,7 @@
             if (saved) {
                 const state = JSON.parse(saved);
                 completionState = state.completionState || {};
+                completionTimestamps = state.completionTimestamps || {};
                 notes = state.notes || {};
             }
         }
@@ -349,6 +360,7 @@
         function saveState() {
             localStorage.setItem('healthTrackerState', JSON.stringify({
                 completionState,
+                completionTimestamps,
                 notes,
                 lastUpdated: new Date().toISOString()
             }));
@@ -435,6 +447,18 @@
                 const key = getItemKey(item);
                 const isCompleted = completionState[key] || false;
                 const itemNotes = notes[key] || '';
+                const timestamp = completionTimestamps[key];
+                
+                let timestampDisplay = '';
+                if (isCompleted && timestamp) {
+                    const date = new Date(timestamp);
+                    const timeStr = date.toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
+                    timestampDisplay = `<div class="item-timestamp">✓ Completed at ${timeStr}</div>`;
+                }
 
                 return `
                     <div class="schedule-item ${isCompleted ? 'completed' : ''}" data-key="${key}">
@@ -447,6 +471,7 @@
                                 <div class="item-time">${item.Time}</div>
                                 <div class="item-activity">${item.Activity}</div>
                                 ${item.Details ? `<div class="item-details">${item.Details}</div>` : ''}
+                                ${timestampDisplay}
                             </div>
                         </div>
                         <div class="notes-section">
@@ -462,11 +487,20 @@
 
         // Toggle item completion
         function toggleComplete(key) {
+            const wasCompleted = completionState[key];
             completionState[key] = !completionState[key];
+            
+            // Set timestamp when checking, remove when unchecking
+            if (completionState[key]) {
+                completionTimestamps[key] = new Date().toISOString();
+            } else {
+                delete completionTimestamps[key];
+            }
+            
             saveState();
             showDay(currentDay); // Refresh view
             
-            // Auto-scroll to next unchecked item
+            // Auto-scroll to next unchecked item (only when checking off)
             if (completionState[key]) {
                 setTimeout(() => {
                     scrollToNextUnchecked();
@@ -538,6 +572,7 @@
                             activity: item.Activity,
                             details: item.Details,
                             completed: completionState[key] || false,
+                            completedAt: completionTimestamps[key] || null,
                             notes: notes[key] || ''
                         };
                     }).filter(item => item.completed || item.notes) // Only export items with data
