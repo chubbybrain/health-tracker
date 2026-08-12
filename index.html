@@ -509,7 +509,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.1.1 (Removed Manual Export) • Last Updated: Aug 10, 2026 @ 03:15 UTC</div>
+            <div class="version">Version 2.2.0 (Fixed Cron + UX Improvements) • Last Updated: Aug 12, 2026 @ 12:30 UTC</div>
         </div>
     </div>
 
@@ -519,7 +519,7 @@
             : 'https://184-107-106-29.sslip.io';
         
         let scheduleData = null;
-        let currentDay = 1;
+        let currentDay = parseInt(localStorage.getItem('currentDay')) || 1;
         let completionState = {};
         let completionTimestamps = {};
         let notes = {};
@@ -772,6 +772,7 @@
         // Show schedule for a specific day
         function showDay(day) {
             currentDay = day;
+            localStorage.setItem('currentDay', day); // Save selected day
             
             // Update day selector buttons
             document.querySelectorAll('.day-btn').forEach((btn, idx) => {
@@ -882,12 +883,17 @@
             }
         }
         
-        // Scroll to next unchecked item
+        // Scroll to next unchecked item (forward only)
         function scrollToNextUnchecked() {
             const items = document.querySelectorAll('.schedule-item');
+            const currentScrollY = window.scrollY;
+            
+            // Find the first unchecked item that is BELOW the current scroll position
             for (let item of items) {
                 const checkbox = item.querySelector('.checkbox');
-                if (checkbox && !checkbox.checked) {
+                const itemTop = item.getBoundingClientRect().top + window.scrollY;
+                
+                if (checkbox && !checkbox.checked && itemTop > currentScrollY + 100) {
                     item.scrollIntoView({ 
                         behavior: 'smooth', 
                         block: 'center' 
