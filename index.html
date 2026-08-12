@@ -509,7 +509,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.2.0 (Fixed Cron + UX Improvements) • Last Updated: Aug 12, 2026 @ 12:30 UTC</div>
+            <div class="version">Version 2.2.1 (Fixed Day Memory + Yesterday Date) • Last Updated: Aug 12, 2026 @ 12:45 UTC</div>
         </div>
     </div>
 
@@ -586,30 +586,11 @@
         async function loadYesterdaySummary() {
             const container = document.getElementById('yesterday-container');
             
-            if (!scheduleData) {
-                container.innerHTML = '<div class="summary-empty">⚠️ Schedule data not loaded yet</div>';
-                return;
-            }
-
-            // Calculate yesterday's day number
-            const yesterdayDay = currentDay - 1;
-            
-            if (yesterdayDay < 1) {
-                container.innerHTML = '<div class="summary-empty">📅 No previous day available (you\'re on Day 1)</div>';
-                return;
-            }
-
-            // Find yesterday's date from schedule data
-            const yesterdayItems = scheduleData.schedule.filter(item => 
-                parseInt(item.DayNumber) === yesterdayDay
-            );
-            
-            if (yesterdayItems.length === 0) {
-                container.innerHTML = '<div class="summary-empty">⚠️ No schedule data found for yesterday</div>';
-                return;
-            }
-
-            const yesterdayDate = yesterdayItems[0].Date;
+            // Calculate actual yesterday's date (calendar date, not day number)
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayDate = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD format
             
             container.innerHTML = '<div class="summary-loading">Loading summary...</div>';
 
@@ -747,7 +728,7 @@
                 scheduleData = await response.json();
                 await loadState(); // Wait for state to load from server
                 initDaySelector();
-                showDay(1);
+                showDay(currentDay); // Load the last selected day from localStorage
             } catch (error) {
                 document.getElementById('schedule-container').innerHTML = 
                     '<div class="empty-state">Failed to load schedule. Please refresh.</div>';
