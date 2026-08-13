@@ -509,7 +509,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.2.1 (Fixed Day Memory + Yesterday Date) • Last Updated: Aug 12, 2026 @ 12:45 UTC</div>
+            <div class="version">Version 2.3.0 (Time Override from Notes) • Last Updated: Aug 12, 2026 @ 12:52 UTC</div>
         </div>
     </div>
 
@@ -884,9 +884,36 @@
             }
         }
 
+        // Parse time from note (e.g., [6:15] or [17:45])
+        function parseTimeFromNote(noteText) {
+            if (!noteText) return null;
+            
+            const match = noteText.match(/\[(\d{1,2}):(\d{2})\]/);
+            if (!match) return null;
+            
+            const hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            
+            // Create timestamp for today with the specified time
+            const now = new Date();
+            const timestamp = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
+            
+            return timestamp.toISOString();
+        }
+
         // Update notes
         function updateNotes(key, value) {
             notes[key] = value;
+            
+            // If item is completed and note contains a time, update the timestamp
+            if (completionState[key]) {
+                const parsedTime = parseTimeFromNote(value);
+                if (parsedTime) {
+                    completionTimestamps[key] = parsedTime;
+                    showDay(currentDay); // Refresh to show updated timestamp
+                }
+            }
+            
             saveState();
         }
 
