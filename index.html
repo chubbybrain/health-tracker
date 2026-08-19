@@ -58,7 +58,7 @@
 
         .day-selector {
             display: flex;
-            gap: 0.15rem;
+            gap: 0.1rem;
             margin-bottom: 1.5rem;
             flex-wrap: nowrap;
             overflow-x: auto;
@@ -66,15 +66,16 @@
 
         .day-btn {
             flex: 1;
-            min-width: 38px;
-            padding: 0.4rem 0.15rem;
+            min-width: 32px;
+            max-width: 42px;
+            padding: 0.4rem 0.1rem;
             border: 1px solid var(--border);
             background: var(--card-bg);
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
             font-weight: 500;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             white-space: nowrap;
         }
 
@@ -503,7 +504,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.5.3 (Month Header Fixed) • Last Updated: Aug 19, 2026 @ 14:05 UTC</div>
+            <div class="version">Version 2.5.4 (Micro Buttons - 7 on screen) • Last Updated: Aug 19, 2026 @ 14:10 UTC</div>
         </div>
     </div>
 
@@ -778,7 +779,7 @@
             
             // Create button container
             const btnContainer = document.createElement('div');
-            btnContainer.style.cssText = 'display: flex; gap: 0.15rem; flex-wrap: nowrap; overflow-x: auto;';
+            btnContainer.style.cssText = 'display: flex; gap: 0.1rem; flex-wrap: nowrap; overflow-x: auto;';
             
             for (let i = 0; i < daysToShow; i++) {
                 const offset = startOffset + i;
