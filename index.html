@@ -502,7 +502,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.6.2 (Fit-content buttons) • Last Updated: Aug 19, 2026 @ 14:28 UTC</div>
+            <div class="version">Version 2.7.0 (Re-centering navigation) • Last Updated: Aug 19, 2026 @ 14:32 UTC</div>
         </div>
     </div>
 
@@ -759,20 +759,32 @@
             return targetDate;
         }
         
-        // Initialize day selector with calendar dates centered on today
-        function initDaySelector() {
+        // Track the center date for navigation
+        let centerDate = null;
+        
+        // Initialize day selector with calendar dates centered on a specific date
+        function initDaySelector(dateToCenter = null) {
             const container = document.getElementById('day-selector');
-            const today = new Date();
-            const todayDayNumber = getDateDayNumber(today);
             
-            // Show 7 days centered on today (3 before, today, 3 after)
+            // Use provided date, or fall back to centerDate, or default to today
+            if (dateToCenter) {
+                centerDate = new Date(dateToCenter);
+            } else if (!centerDate) {
+                centerDate = new Date();
+            }
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            centerDate.setHours(0, 0, 0, 0);
+            
+            // Show 7 days centered on centerDate (3 before, center, 3 after)
             const daysToShow = 7;
             const startOffset = -3;
             
             // Add month header
             const monthHeader = document.createElement('div');
             monthHeader.style.cssText = 'text-align: center; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; width: 100%;';
-            monthHeader.textContent = today.toLocaleDateString('en-US', { month: 'long' });
+            monthHeader.textContent = centerDate.toLocaleDateString('en-US', { month: 'long' });
             container.appendChild(monthHeader);
             
             // Create button container
@@ -781,8 +793,8 @@
             
             for (let i = 0; i < daysToShow; i++) {
                 const offset = startOffset + i;
-                const date = new Date(today);
-                date.setDate(today.getDate() + offset);
+                const date = new Date(centerDate);
+                date.setDate(centerDate.getDate() + offset);
                 
                 const dayNumber = getDateDayNumber(date);
                 const dayOfMonth = date.getDate();
@@ -792,13 +804,13 @@
                 btn.textContent = `${dayOfMonth}`;
                 btn.onclick = () => {
                     showDay(dayNumber);
-                    // Re-render with new date centered
+                    // Re-render with clicked date as new center
                     container.innerHTML = '';
-                    initDaySelector();
+                    initDaySelector(date);
                 };
                 
-                // Highlight today
-                if (offset === 0) {
+                // Highlight today with bold + thicker border
+                if (date.getTime() === today.getTime()) {
                     btn.style.fontWeight = '700';
                     btn.style.borderWidth = '3px';
                 }
@@ -817,13 +829,12 @@
             const buttons = document.querySelectorAll('.day-btn');
             buttons.forEach(btn => {
                 const dayOfMonth = parseInt(btn.textContent);
-                const today = new Date();
                 
-                // Find which date this button represents
+                // Find which date this button represents (relative to centerDate)
                 let matchingDate = null;
                 for (let offset = -3; offset <= 3; offset++) {
-                    const testDate = new Date(today);
-                    testDate.setDate(today.getDate() + offset);
+                    const testDate = new Date(centerDate);
+                    testDate.setDate(centerDate.getDate() + offset);
                     if (testDate.getDate() === dayOfMonth) {
                         matchingDate = testDate;
                         break;
