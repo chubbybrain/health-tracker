@@ -94,11 +94,34 @@ async function analyzeYesterday() {
                     const completedItems = rows.filter(r => r.completed === 1);
                     const itemsWithNotes = rows.filter(r => r.note_text && r.note_text.trim());
                     
+                    // Separate required and optional tasks
+                    const requiredItems = dayItems.filter(item => !item.Activity.includes('(Optional)'));
+                    const optionalItems = dayItems.filter(item => item.Activity.includes('(Optional)'));
+                    
+                    // Count completed items
+                    const completedRequired = completedItems.filter(c => {
+                        const item = dayItems.find(d => 
+                            `${d.DayNumber}_${d.Time}_${d.Activity}` === c.item_key
+                        );
+                        return item && !item.Activity.includes('(Optional)');
+                    }).length;
+                    
+                    const completedOptional = completedItems.filter(c => {
+                        const item = dayItems.find(d => 
+                            `${d.DayNumber}_${d.Time}_${d.Activity}` === c.item_key
+                        );
+                        return item && item.Activity.includes('(Optional)');
+                    }).length;
+                    
+                    // Total = required + completed optional
+                    const totalScheduled = requiredItems.length + completedOptional;
+                    const completed = completedRequired + completedOptional;
+                    
                     const stats = {
-                        totalScheduled: dayItems.length,
-                        completed: completedItems.length,
-                        skipped: dayItems.length - completedItems.length,
-                        completionRate: Math.round((completedItems.length / dayItems.length) * 100),
+                        totalScheduled: totalScheduled,
+                        completed: completed,
+                        skipped: requiredItems.length - completedRequired,
+                        completionRate: totalScheduled > 0 ? Math.round((completed / totalScheduled) * 100) : 0,
                         notesProvided: itemsWithNotes.length
                     };
 

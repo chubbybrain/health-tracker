@@ -682,7 +682,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.9.2 (Light Veil + Solid Modal) • Last Updated: Aug 19, 2026 @ 16:52 UTC</div>
+            <div class="version">Version 2.9.3 (Optional Tasks Logic) • Last Updated: Aug 19, 2026 @ 16:57 UTC</div>
         </div>
     </div>
 
@@ -1640,10 +1640,24 @@
 
         // Update statistics
         function updateStats(items) {
-            const total = items.length;
-            const completed = items.filter(item => 
+            // Separate required and optional tasks
+            const requiredItems = items.filter(item => !item.Activity.includes('(Optional)'));
+            const optionalItems = items.filter(item => item.Activity.includes('(Optional)'));
+            
+            // Count required tasks
+            const requiredCompleted = requiredItems.filter(item => 
                 completionState[getItemKey(item)]
             ).length;
+            
+            // Count completed optional tasks
+            const optionalCompleted = optionalItems.filter(item => 
+                completionState[getItemKey(item)]
+            ).length;
+            
+            // Total = required tasks + completed optional tasks
+            const total = requiredItems.length + optionalCompleted;
+            const completed = requiredCompleted + optionalCompleted;
+            
             const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
             document.getElementById('stat-progress').textContent = `${progress}%`;
