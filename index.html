@@ -204,30 +204,28 @@
         }
 
         .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1rem;
             margin-bottom: 1.5rem;
         }
 
         .stat-card {
             background: var(--card-bg);
-            padding: 1rem;
+            padding: 1.5rem 1rem;
             border-radius: 8px;
             box-shadow: var(--shadow);
             text-align: center;
         }
 
         .stat-value {
-            font-size: 1.75rem;
+            font-size: 3rem;
             font-weight: 700;
             color: var(--primary);
+            line-height: 1;
         }
 
         .stat-label {
-            font-size: 0.85rem;
+            font-size: 1rem;
             color: var(--text-muted);
-            margin-top: 0.25rem;
+            margin-top: 0.5rem;
         }
 
         .empty-state {
@@ -469,19 +467,11 @@
         <!-- Today Tab -->
         <div id="tab-today" class="tab-content active">
             <div class="stats" id="stats">
-            <div class="stat-card">
-                <div class="stat-value" id="stat-progress">0%</div>
-                <div class="stat-label">Daily Progress</div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-progress">0%</div>
+                    <div class="stat-label" id="stat-completed-label">0/0 completed</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="stat-completed">0</div>
-                <div class="stat-label">Completed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="stat-remaining">0</div>
-                <div class="stat-label">Remaining</div>
-            </div>
-        </div>
 
         <div class="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
@@ -511,7 +501,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.4.1 (Mobile Calendar Layout) • Last Updated: Aug 19, 2026 @ 13:30 UTC</div>
+            <div class="version">Version 2.5.0 (Compact Mobile Layout) • Last Updated: Aug 19, 2026 @ 13:45 UTC</div>
         </div>
     </div>
 
@@ -1030,8 +1020,7 @@
             const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
             document.getElementById('stat-progress').textContent = `${progress}%`;
-            document.getElementById('stat-completed').textContent = completed;
-            document.getElementById('stat-remaining').textContent = total - completed;
+            document.getElementById('stat-completed-label').textContent = `${completed}/${total} completed`;
             document.getElementById('progress-fill').style.width = `${progress}%`;
         }
 
