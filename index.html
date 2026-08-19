@@ -376,7 +376,7 @@
         }
 
         .stats {
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.5rem;
         }
 
         .stat-card {
@@ -448,12 +448,23 @@
             color: #78350f;
         }
 
+        /* Sticky Header */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 100;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
         /* Tab Navigation */
         .tabs {
             display: flex;
             gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border);
+            margin-bottom: 0.75rem;
+            border-bottom: none;
         }
 
         .tab-btn {
@@ -631,21 +642,26 @@
             <div class="subtitle">40lb Weight Loss Program - 2 Weeks</div>
         </header>
 
-        <!-- Tab Navigation -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('today')">📅 Today</button>
-            <button class="tab-btn" onclick="switchTab('yesterday')">📊 Yesterday</button>
-            <button class="tab-btn" onclick="switchTab('week')">🗓️ Week</button>
-        </div>
+        <!-- Sticky Header with Tabs and Stats -->
+        <div class="sticky-header">
+            <!-- Tab Navigation -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('today')">📅 Today</button>
+                <button class="tab-btn" onclick="switchTab('yesterday')">📊 Yesterday</button>
+                <button class="tab-btn" onclick="switchTab('week')">🗓️ Week</button>
+            </div>
 
-        <!-- Today Tab -->
-        <div id="tab-today" class="tab-content active">
+            <!-- Stats Card (visible on all tabs) -->
             <div class="stats" id="stats">
                 <div class="stat-card">
                     <div class="stat-value" id="stat-progress">0%</div>
                     <div class="stat-label" id="stat-completed-label">0/0 completed</div>
                 </div>
             </div>
+        </div>
+
+        <!-- Today Tab -->
+        <div id="tab-today" class="tab-content active">
 
         <div class="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
@@ -682,7 +698,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.9.3 (Optional Tasks Logic) • Last Updated: Aug 19, 2026 @ 16:57 UTC</div>
+            <div class="version">Version 2.9.4 (Sticky Header) • Last Updated: Aug 19, 2026 @ 17:15 UTC</div>
         </div>
     </div>
 
