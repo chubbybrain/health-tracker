@@ -241,7 +241,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -255,11 +257,13 @@
 
         .modal {
             background: var(--bg-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             max-width: 500px;
             width: 100%;
             padding: 1.5rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+                        0 0 0 1px rgba(255, 255, 255, 0.05);
         }
 
         .modal-header {
@@ -677,7 +681,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.9.0 (Bulletproof Sync + Conflict Detection) • Last Updated: Aug 19, 2026 @ 16:45 UTC</div>
+            <div class="version">Version 2.9.1 (Modal Overlay Fixed) • Last Updated: Aug 19, 2026 @ 16:48 UTC</div>
         </div>
     </div>
 
