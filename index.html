@@ -241,9 +241,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.92);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.20);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -256,14 +256,14 @@
         }
 
         .modal {
-            background: var(--bg-primary);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #1a1f2e;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 12px;
             max-width: 500px;
             width: 100%;
             padding: 1.5rem;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
-                        0 0 0 1px rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8),
+                        0 0 0 1px rgba(255, 255, 255, 0.1);
         }
 
         .modal-header {
@@ -280,12 +280,12 @@
         .modal-title {
             font-size: 1.25rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: #ffffff;
         }
 
         .modal-body {
             margin-bottom: 1.5rem;
-            color: var(--text-muted);
+            color: #cbd5e1;
             line-height: 1.6;
         }
 
@@ -297,8 +297,8 @@
         }
 
         .conflict-option {
-            background: var(--bg-secondary);
-            border: 2px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.15);
             border-radius: 8px;
             padding: 1rem;
             cursor: pointer;
@@ -307,7 +307,7 @@
 
         .conflict-option:hover {
             border-color: var(--primary);
-            background: rgba(37, 99, 235, 0.05);
+            background: rgba(37, 99, 235, 0.15);
         }
 
         .conflict-option-title {
@@ -316,16 +316,17 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            color: #ffffff;
         }
 
         .conflict-option-desc {
             font-size: 0.85rem;
-            color: var(--text-muted);
+            color: #cbd5e1;
         }
 
         .conflict-option-meta {
             font-size: 0.75rem;
-            color: var(--text-muted);
+            color: #94a3b8;
             margin-top: 0.5rem;
             font-style: italic;
         }
@@ -681,7 +682,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.9.1 (Modal Overlay Fixed) • Last Updated: Aug 19, 2026 @ 16:48 UTC</div>
+            <div class="version">Version 2.9.2 (Light Veil + Solid Modal) • Last Updated: Aug 19, 2026 @ 16:52 UTC</div>
         </div>
     </div>
 
