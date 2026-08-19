@@ -503,7 +503,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.5.2 (Ultra-Compact Date Buttons) • Last Updated: Aug 19, 2026 @ 14:00 UTC</div>
+            <div class="version">Version 2.5.3 (Month Header Fixed) • Last Updated: Aug 19, 2026 @ 14:05 UTC</div>
         </div>
     </div>
 
@@ -772,13 +772,13 @@
             
             // Add month header
             const monthHeader = document.createElement('div');
-            monthHeader.style.cssText = 'text-align: center; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem;';
+            monthHeader.style.cssText = 'text-align: center; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; width: 100%;';
             monthHeader.textContent = today.toLocaleDateString('en-US', { month: 'long' });
             container.appendChild(monthHeader);
             
             // Create button container
             const btnContainer = document.createElement('div');
-            btnContainer.style.cssText = 'display: flex; gap: 0.5rem; flex-wrap: wrap;';
+            btnContainer.style.cssText = 'display: flex; gap: 0.15rem; flex-wrap: nowrap; overflow-x: auto;';
             
             for (let i = 0; i < daysToShow; i++) {
                 const offset = startOffset + i;
