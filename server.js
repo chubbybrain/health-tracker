@@ -226,6 +226,178 @@ app.get('/api/summary/:date', (req, res) => {
     );
 });
 
+// Get weekly summary (last 7 days of data aggregated)
+app.get('/api/weekly-summary', (req, res) => {
+    db.all(
+        `SELECT date, day_number, summary_text, stats, created_at
+         FROM daily_summaries
+         ORDER BY date DESC
+         LIMIT 7`,
+        [],
+        (err, rows) => {
+            if (err) {
+                console.error('Error fetching weekly summaries:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            // Reverse to get chronological order (oldest to newest)
+            rows.reverse();
+            
+            // Aggregate dopamine patterns
+            const patterns = {
+                energizing: [],
+                draining: [],
+                flowState: [],
+                procrastination: []
+            };
+            
+            const completionTrend = [];
+            const focusHeatmap = {}; // { date: { hour: 'flow'|'procrastination'|'energizing'|'draining' } }
+            
+            rows.forEach(row => {
+                const stats = row.stats ? JSON.parse(row.stats) : {};
+                const summary = row.summary_text || '';
+                
+                // Add completion data
+                completionTrend.push({
+                    date: row.date,
+                    dayOfWeek: new Date(row.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+                    completionRate: stats.completionRate || 0,
+                    completed: stats.completed || 0,
+                    total: stats.totalScheduled || 0
+                });
+                
+                // Parse dopamine tags from summary text
+                const energizingMatches = summary.match(/✅[^-]*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?):\s*([^\n—]+)/gi) || [];
+                const drainingMatches = summary.match(/❌[^-]*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?):\s*([^\n—]+)/gi) || [];
+                const flowMatches = summary.match(/🟢[^-]*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?):\s*([^\n—]+)/gi) || [];
+                const procrastMatches = summary.match(/🔴[^-]*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?):\s*([^\n—]+)/gi) || [];
+                
+                // Extract activities and times
+                energizingMatches.forEach(match => {
+                    const parts = match.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?):?\s*([^\n—]+)/i);
+                    if (parts) {
+                        patterns.energizing.push({ date: row.date, time: parts[1], activity: parts[2].trim() });
+                        addToHeatmap(focusHeatmap, row.date, parts[1], 'energizing');
+                    }
+                });
+                
+                drainingMatches.forEach(match => {
+                    const parts = match.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?):?\s*([^\n—]+)/i);
+                    if (parts) {
+                        patterns.draining.push({ date: row.date, time: parts[1], activity: parts[2].trim() });
+                        addToHeatmap(focusHeatmap, row.date, parts[1], 'draining');
+                    }
+                });
+                
+                flowMatches.forEach(match => {
+                    const parts = match.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?):?\s*([^\n—]+)/i);
+                    if (parts) {
+                        patterns.flowState.push({ date: row.date, time: parts[1], activity: parts[2].trim() });
+                        addToHeatmap(focusHeatmap, row.date, parts[1], 'flow');
+                    }
+                });
+                
+                procrastMatches.forEach(match => {
+                    const parts = match.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?):?\s*([^\n—]+)/i);
+                    if (parts) {
+                        patterns.procrastination.push({ date: row.date, time: parts[1], activity: parts[2].trim() });
+                        addToHeatmap(focusHeatmap, row.date, parts[1], 'procrastination');
+                    }
+                });
+            });
+            
+            // Calculate insights
+            const insights = generateWeeklyInsights(patterns, completionTrend, focusHeatmap);
+            
+            res.json({
+                weekStart: rows[0]?.date || null,
+                weekEnd: rows[rows.length - 1]?.date || null,
+                completionTrend,
+                patterns,
+                focusHeatmap,
+                insights
+            });
+        }
+    );
+});
+
+// Helper: Add time to heatmap
+function addToHeatmap(heatmap, date, timeStr, type) {
+    const hour = extractHour(timeStr);
+    if (hour === null) return;
+    
+    if (!heatmap[date]) heatmap[date] = {};
+    if (!heatmap[date][hour]) heatmap[date][hour] = [];
+    heatmap[date][hour].push(type);
+}
+
+// Helper: Extract hour from time string
+function extractHour(timeStr) {
+    const match = timeStr.match(/(\d{1,2}):\d{2}\s*(AM|PM)?/i);
+    if (!match) return null;
+    
+    let hour = parseInt(match[1]);
+    const period = match[2];
+    
+    if (period) {
+        if (period.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+        if (period.toUpperCase() === 'AM' && hour === 12) hour = 0;
+    }
+    
+    return hour;
+}
+
+// Helper: Generate weekly insights
+function generateWeeklyInsights(patterns, completionTrend, focusHeatmap) {
+    const insights = {
+        bestFocusTime: null,
+        procrastinationRisk: null,
+        weekPattern: null,
+        suggestions: []
+    };
+    
+    // Find most common flow time
+    if (patterns.flowState.length > 0) {
+        const flowHours = patterns.flowState.map(f => extractHour(f.time)).filter(h => h !== null);
+        const hourCounts = {};
+        flowHours.forEach(h => hourCounts[h] = (hourCounts[h] || 0) + 1);
+        const mostCommonHour = Object.keys(hourCounts).reduce((a, b) => hourCounts[a] > hourCounts[b] ? a : b);
+        insights.bestFocusTime = `${mostCommonHour}:00 (${hourCounts[mostCommonHour]} flow states)`;
+        
+        insights.suggestions.push(`Block ${mostCommonHour}:00-${parseInt(mostCommonHour) + 1}:30 for hardest tasks (your flow time)`);
+    }
+    
+    // Find most common procrastination time
+    if (patterns.procrastination.length > 0) {
+        const procrastHours = patterns.procrastination.map(p => extractHour(p.time)).filter(h => h !== null);
+        const hourCounts = {};
+        procrastHours.forEach(h => hourCounts[h] = (hourCounts[h] || 0) + 1);
+        const mostCommonHour = Object.keys(hourCounts).reduce((a, b) => hourCounts[a] > hourCounts[b] ? a : b);
+        insights.procrastinationRisk = `${mostCommonHour}:00 (${hourCounts[mostCommonHour]} incidents)`;
+        
+        insights.suggestions.push(`Move easier tasks to ${mostCommonHour}:00-${parseInt(mostCommonHour) + 1}:00 (procrastination window)`);
+    }
+    
+    // Detect weekly pattern
+    if (patterns.energizing.length > patterns.draining.length) {
+        insights.weekPattern = 'More energizing activities than draining ones. Good momentum!';
+    } else if (patterns.draining.length > patterns.energizing.length) {
+        insights.weekPattern = 'More draining activities than energizing. Consider adjusting break activities.';
+        insights.suggestions.push('Replace screen time breaks with movement or outdoor time');
+    }
+    
+    // Check completion trend
+    if (completionTrend.length > 0) {
+        const avgCompletion = completionTrend.reduce((sum, day) => sum + day.completionRate, 0) / completionTrend.length;
+        if (avgCompletion < 70) {
+            insights.suggestions.push('Week average below 70%. Focus on ONE priority per day next week.');
+        }
+    }
+    
+    return insights;
+}
+
 // Save daily summary (called by cron job)
 app.post('/api/summary', (req, res) => {
     const { date, dayNumber, summary, stats } = req.body;

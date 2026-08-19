@@ -463,6 +463,7 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('today')">📅 Today</button>
             <button class="tab-btn" onclick="switchTab('yesterday')">📊 Yesterday</button>
+            <button class="tab-btn" onclick="switchTab('week')">🗓️ Week</button>
         </div>
 
         <!-- Today Tab -->
@@ -501,8 +502,15 @@
             </div>
         </div>
 
+        <!-- Week Tab -->
+        <div id="tab-week" class="tab-content">
+            <div id="week-container">
+                <div class="summary-loading">Loading weekly summary...</div>
+            </div>
+        </div>
+
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.7.0 (Re-centering navigation) • Last Updated: Aug 19, 2026 @ 14:32 UTC</div>
+            <div class="version">Version 2.8.0 (Week Tab + Dopamine Insights) • Last Updated: Aug 19, 2026 @ 15:10 UTC</div>
         </div>
     </div>
 
@@ -518,6 +526,7 @@
         let notes = {};
         let syncInProgress = false;
         let yesterdaySummary = null;
+        let weeklySummary = null;
 
         // Tab switching
         function switchTab(tabName) {
@@ -536,6 +545,11 @@
             // Load yesterday summary if switching to yesterday tab
             if (tabName === 'yesterday' && !yesterdaySummary) {
                 loadYesterdaySummary();
+            }
+            
+            // Load weekly summary if switching to week tab
+            if (tabName === 'week' && !weeklySummary) {
+                loadWeeklySummary();
             }
         }
 
@@ -646,6 +660,227 @@
                     </div>
                 </div>
             `;
+        }
+
+        // Load weekly summary
+        async function loadWeeklySummary() {
+            const container = document.getElementById('week-container');
+            container.innerHTML = '<div class="summary-loading">Loading weekly summary...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/weekly-summary`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                weeklySummary = data;
+                
+                renderWeeklySummary(data);
+            } catch (error) {
+                console.error('Error loading weekly summary:', error);
+                container.innerHTML = `
+                    <div class="summary-container">
+                        <div class="summary-empty">
+                            ⚠️ Unable to load weekly summary
+                            <br><br>
+                            <small>Error: ${error.message}</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Render weekly summary
+        function renderWeeklySummary(data) {
+            const container = document.getElementById('week-container');
+            
+            if (data.completionTrend.length === 0) {
+                container.innerHTML = `
+                    <div class="summary-container">
+                        <div class="summary-empty">
+                            📊 No weekly data yet
+                            <br><br>
+                            <small>Complete some days first, then check back here to see your patterns!</small>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const { weekStart, weekEnd, completionTrend, patterns, insights } = data;
+            
+            // Format week range
+            const startDate = new Date(weekStart + 'T00:00:00');
+            const endDate = new Date(weekEnd + 'T00:00:00');
+            const weekRange = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            
+            // Calculate average completion
+            const avgCompletion = completionTrend.length > 0
+                ? Math.round(completionTrend.reduce((sum, day) => sum + day.completionRate, 0) / completionTrend.length)
+                : 0;
+            
+            // Build completion trend bars
+            let trendHTML = '';
+            completionTrend.forEach(day => {
+                const barColor = day.completionRate >= 80 ? '#10b981' : day.completionRate >= 60 ? '#3b82f6' : '#f59e0b';
+                trendHTML += `
+                    <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                        <div style="width: 40px; font-weight: 600; color: var(--text-muted);">${day.dayOfWeek}</div>
+                        <div style="flex: 1; background: var(--border); height: 24px; border-radius: 4px; overflow: hidden; margin: 0 0.5rem;">
+                            <div style="width: ${day.completionRate}%; height: 100%; background: ${barColor}; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; color: white; font-size: 0.75rem; font-weight: 600;">
+                                ${day.completionRate > 15 ? day.completionRate + '%' : ''}
+                            </div>
+                        </div>
+                        <div style="width: 60px; text-align: right; font-size: 0.875rem; color: var(--text-muted);">
+                            ${day.completed}/${day.total}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Build dopamine patterns summary
+            let patternsHTML = '';
+            
+            if (patterns.energizing.length > 0) {
+                const topEnergizing = getTopActivities(patterns.energizing, 3);
+                patternsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: var(--success); margin-bottom: 0.5rem;">
+                            ✅ Energizing: ${patterns.energizing.length} activities
+                        </div>
+                        <ul style="margin-left: 1.5rem; color: var(--text-muted); font-size: 0.875rem;">
+                            ${topEnergizing.map(([activity, count]) => `<li>${activity} (${count}x)</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (patterns.draining.length > 0) {
+                const topDraining = getTopActivities(patterns.draining, 3);
+                patternsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: #f59e0b; margin-bottom: 0.5rem;">
+                            ❌ Draining: ${patterns.draining.length} activities
+                        </div>
+                        <ul style="margin-left: 1.5rem; color: var(--text-muted); font-size: 0.875rem;">
+                            ${topDraining.map(([activity, count]) => `<li>${activity} (${count}x)</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (patterns.flowState.length > 0) {
+                const topFlow = getTopActivities(patterns.flowState, 3);
+                patternsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: var(--success); margin-bottom: 0.5rem;">
+                            🟢 Flow States: ${patterns.flowState.length} times
+                        </div>
+                        <ul style="margin-left: 1.5rem; color: var(--text-muted); font-size: 0.875rem;">
+                            ${topFlow.map(([activity, count]) => `<li>${activity} (${count}x)</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (patterns.procrastination.length > 0) {
+                const topProcrast = getTopActivities(patterns.procrastination, 3);
+                patternsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: #ef4444; margin-bottom: 0.5rem;">
+                            🔴 Procrastination: ${patterns.procrastination.length} triggers
+                        </div>
+                        <ul style="margin-left: 1.5rem; color: var(--text-muted); font-size: 0.875rem;">
+                            ${topProcrast.map(([activity, count]) => `<li>${activity} (${count}x)</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            // Build insights section
+            let insightsHTML = '';
+            if (insights.bestFocusTime) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">🎯 Your best focus time:</div>
+                        <div style="color: var(--text-muted); font-size: 0.875rem;">${insights.bestFocusTime}</div>
+                    </div>
+                `;
+            }
+            
+            if (insights.procrastinationRisk) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">⚠️ Procrastination risk:</div>
+                        <div style="color: var(--text-muted); font-size: 0.875rem;">${insights.procrastinationRisk}</div>
+                    </div>
+                `;
+            }
+            
+            if (insights.weekPattern) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;">💡 This week's pattern:</div>
+                        <div style="color: var(--text-muted); font-size: 0.875rem;">${insights.weekPattern}</div>
+                    </div>
+                `;
+            }
+            
+            // Build suggestions
+            let suggestionsHTML = '';
+            if (insights.suggestions && insights.suggestions.length > 0) {
+                suggestionsHTML = `
+                    <div style="background: #f0f9ff; border-left: 3px solid var(--primary); padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">📋 Suggested adjustments for next week:</div>
+                        <ul style="margin-left: 1.5rem; color: var(--text-muted); font-size: 0.875rem;">
+                            ${insights.suggestions.map(s => `<li>${s}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = `
+                <div class="summary-container">
+                    <div class="summary-header">
+                        <div class="summary-date">📊 Week of ${weekRange}</div>
+                    </div>
+                    
+                    <div class="summary-content">
+                        <h2 style="margin-top: 0;">═══ Completion Trend ═══</h2>
+                        ${trendHTML}
+                        <div style="text-align: center; font-size: 1.25rem; font-weight: 600; color: var(--primary); margin-top: 1rem;">
+                            Week avg: ${avgCompletion}% ${avgCompletion >= 80 ? '✅' : avgCompletion >= 60 ? '📊' : '⚠️'}
+                        </div>
+                        
+                        ${patternsHTML ? `
+                            <h2>═══ Dopamine Patterns ═══</h2>
+                            ${patternsHTML}
+                        ` : ''}
+                        
+                        ${insightsHTML ? `
+                            <h2>═══ Insights ═══</h2>
+                            ${insightsHTML}
+                        ` : ''}
+                        
+                        ${suggestionsHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Helper: Get top N activities by frequency
+        function getTopActivities(activityList, limit) {
+            const counts = {};
+            activityList.forEach(item => {
+                const key = item.activity;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+            
+            return Object.entries(counts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, limit);
         }
 
         // Load data from API
