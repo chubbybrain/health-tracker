@@ -64,15 +64,15 @@
 
         .day-btn {
             flex: 0 0 auto;
-            width: 40px;
-            padding: 0.4rem 0;
+            width: 36px;
+            padding: 0.35rem 0;
             border: 1px solid var(--border);
             background: var(--card-bg);
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
             font-weight: 500;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             white-space: nowrap;
         }
 
@@ -501,7 +501,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.6.0 (Flex Column Layout) • Last Updated: Aug 19, 2026 @ 14:20 UTC</div>
+            <div class="version">Version 2.6.1 (Smaller Buttons) • Last Updated: Aug 19, 2026 @ 14:25 UTC</div>
         </div>
     </div>
 
@@ -776,7 +776,7 @@
             
             // Create button container
             const btnContainer = document.createElement('div');
-            btnContainer.style.cssText = 'display: flex; flex-direction: row; gap: 0.25rem; justify-content: center;';
+            btnContainer.style.cssText = 'display: flex; flex-direction: row; gap: 0.2rem; justify-content: center;';
             
             for (let i = 0; i < daysToShow; i++) {
                 const offset = startOffset + i;
