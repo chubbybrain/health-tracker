@@ -197,6 +197,173 @@
             overflow: hidden;
         }
 
+        /* Sync status indicator */
+        .sync-status {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: opacity 0.3s;
+        }
+
+        .sync-status.synced {
+            background: #10b981;
+            color: white;
+        }
+
+        .sync-status.syncing {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .sync-status.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .sync-status.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Conflict modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            padding: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-icon {
+            font-size: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            margin-bottom: 1.5rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .conflict-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+
+        .conflict-option {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .conflict-option:hover {
+            border-color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .conflict-option-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .conflict-option-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .conflict-option-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: #1d4ed8;
+        }
+
+        .modal-btn.secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-btn.secondary:hover {
+            background: var(--border);
+        }
+
+        .modal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--success) 0%, #059669 100%);
@@ -510,7 +677,52 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.8.0 (Week Tab + Dopamine Insights) • Last Updated: Aug 19, 2026 @ 15:10 UTC</div>
+            <div class="version">Version 2.9.0 (Bulletproof Sync + Conflict Detection) • Last Updated: Aug 19, 2026 @ 16:45 UTC</div>
+        </div>
+    </div>
+
+    <!-- Sync status indicator -->
+    <div id="sync-status" class="sync-status hidden">
+        <span id="sync-status-text">Synced</span>
+    </div>
+
+    <!-- Conflict modal -->
+    <div id="conflict-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-icon">⚠️</div>
+                <div class="modal-title">Data Conflict Detected</div>
+            </div>
+            <div class="modal-body">
+                <p>Your local data differs from the server. This could happen if you've been using the tracker on another device or if data was lost during a previous session.</p>
+                <p><strong>Choose which version to keep:</strong></p>
+                
+                <div class="conflict-options">
+                    <div class="conflict-option" id="conflict-keep-local" onclick="resolveConflict('local')">
+                        <div class="conflict-option-title">
+                            📱 Keep Local Data (This Device)
+                        </div>
+                        <div class="conflict-option-desc">
+                            Use the data currently on this device and overwrite the server.
+                        </div>
+                        <div class="conflict-option-meta" id="local-meta">
+                            Loading...
+                        </div>
+                    </div>
+
+                    <div class="conflict-option" id="conflict-keep-server" onclick="resolveConflict('server')">
+                        <div class="conflict-option-title">
+                            ☁️ Keep Server Data (Cloud)
+                        </div>
+                        <div class="conflict-option-desc">
+                            Load the data from the server and discard local changes.
+                        </div>
+                        <div class="conflict-option-meta" id="server-meta">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -527,6 +739,98 @@
         let syncInProgress = false;
         let yesterdaySummary = null;
         let weeklySummary = null;
+        let conflictPending = false;
+        let pendingServerData = null;
+        let pendingLocalData = null;
+
+        // Calculate SHA-256 checksum
+        async function calculateChecksum(data) {
+            const str = JSON.stringify(data);
+            const buffer = new TextEncoder().encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Show sync status
+        function showSyncStatus(status, message) {
+            const statusEl = document.getElementById('sync-status');
+            const textEl = document.getElementById('sync-status-text');
+            
+            statusEl.className = 'sync-status';
+            textEl.textContent = message;
+            
+            if (status === 'synced') {
+                statusEl.classList.add('synced');
+            } else if (status === 'syncing') {
+                statusEl.classList.add('syncing');
+            } else if (status === 'error') {
+                statusEl.classList.add('error');
+            }
+            
+            // Auto-hide after 3 seconds for success states
+            if (status === 'synced') {
+                setTimeout(() => {
+                    statusEl.classList.add('hidden');
+                }, 3000);
+            }
+        }
+
+        // Show conflict modal
+        function showConflictModal(localData, serverData) {
+            const modal = document.getElementById('conflict-modal');
+            const localMeta = document.getElementById('local-meta');
+            const serverMeta = document.getElementById('server-meta');
+            
+            const localCount = Object.keys(localData.completionState || {}).length + Object.keys(localData.notes || {}).length;
+            const serverCount = serverData.metadata ? serverData.metadata.item_count : 0;
+            const serverLastSync = serverData.metadata && serverData.metadata.last_sync 
+                ? new Date(serverData.metadata.last_sync).toLocaleString()
+                : 'Never';
+            
+            localMeta.textContent = `${localCount} items on this device`;
+            serverMeta.textContent = `${serverCount} items • Last synced: ${serverLastSync}`;
+            
+            modal.classList.remove('hidden');
+            
+            // Store pending data for resolution
+            pendingLocalData = localData;
+            pendingServerData = serverData;
+            conflictPending = true;
+        }
+
+        // Resolve conflict
+        async function resolveConflict(choice) {
+            const modal = document.getElementById('conflict-modal');
+            modal.classList.add('hidden');
+            
+            if (choice === 'local') {
+                // User chose to keep local data - push to server
+                showSyncStatus('syncing', 'Uploading local data...');
+                await saveState(true); // force=true
+                showSyncStatus('synced', 'Local data saved to server');
+            } else {
+                // User chose to keep server data - load from server
+                showSyncStatus('syncing', 'Loading server data...');
+                completionState = pendingServerData.completionState || {};
+                completionTimestamps = pendingServerData.completionTimestamps || {};
+                notes = pendingServerData.notes || {};
+                
+                // Save to localStorage
+                localStorage.setItem('healthTrackerState', JSON.stringify({
+                    completionState,
+                    completionTimestamps,
+                    notes
+                }));
+                
+                showDay(currentDay);
+                showSyncStatus('synced', 'Server data loaded');
+            }
+            
+            conflictPending = false;
+            pendingLocalData = null;
+            pendingServerData = null;
+        }
 
         // Tab switching
         function switchTab(tabName) {
@@ -883,21 +1187,79 @@
                 .slice(0, limit);
         }
 
-        // Load data from API
+        // Load data from API with conflict detection
         async function loadState() {
             try {
-                const response = await fetch(`${API_BASE}/api/sync`);
-                if (response.ok) {
-                    const data = await response.json();
-                    completionState = data.completionState || {};
-                    completionTimestamps = data.completionTimestamps || {};
-                    notes = data.notes || {};
-                    console.log('State loaded from server');
-                } else {
-                    console.warn('Failed to load state from server, using empty state');
+                // Load from localStorage first
+                const saved = localStorage.getItem('healthTrackerState');
+                let localData = null;
+                
+                if (saved) {
+                    try {
+                        localData = JSON.parse(saved);
+                    } catch (e) {
+                        console.error('Failed to parse localStorage:', e);
+                    }
                 }
+                
+                // Fetch from server
+                const response = await fetch(`${API_BASE}/api/sync`);
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                
+                const serverData = await response.json();
+                
+                // If no local data, just use server data
+                if (!localData || Object.keys(localData.completionState || {}).length === 0) {
+                    completionState = serverData.completionState || {};
+                    completionTimestamps = serverData.completionTimestamps || {};
+                    notes = serverData.notes || {};
+                    console.log('State loaded from server (no local data)');
+                    return;
+                }
+                
+                // If no server data, use local data
+                if (!serverData.metadata || !serverData.metadata.data_checksum) {
+                    completionState = localData.completionState || {};
+                    completionTimestamps = localData.completionTimestamps || {};
+                    notes = localData.notes || {};
+                    console.log('Using local data (server empty)');
+                    // Auto-push to server
+                    await saveState(true);
+                    return;
+                }
+                
+                // Both have data - compare checksums
+                const localChecksum = await calculateChecksum({
+                    completionState: localData.completionState || {},
+                    completionTimestamps: localData.completionTimestamps || {},
+                    notes: localData.notes || {}
+                });
+                
+                const serverChecksum = serverData.metadata.data_checksum;
+                
+                if (localChecksum === serverChecksum) {
+                    // No conflict - data is identical
+                    completionState = serverData.completionState || {};
+                    completionTimestamps = serverData.completionTimestamps || {};
+                    notes = serverData.notes || {};
+                    console.log('State loaded from server (checksums match)');
+                } else {
+                    // CONFLICT DETECTED - show modal
+                    console.warn('Data conflict detected!');
+                    showConflictModal(localData, serverData);
+                    
+                    // Temporarily use local data while user decides
+                    completionState = localData.completionState || {};
+                    completionTimestamps = localData.completionTimestamps || {};
+                    notes = localData.notes || {};
+                }
+                
             } catch (error) {
                 console.error('Error loading state:', error);
+                showSyncStatus('error', 'Sync failed - using local data');
+                
                 // Fallback to localStorage if server is down
                 const saved = localStorage.getItem('healthTrackerState');
                 if (saved) {
@@ -905,18 +1267,27 @@
                     completionState = state.completionState || {};
                     completionTimestamps = state.completionTimestamps || {};
                     notes = state.notes || {};
-                    console.log('Loaded from localStorage (fallback)');
+                    console.log('Loaded from localStorage (server error)');
                 }
             }
         }
 
-        // Save data to API
-        async function saveState() {
-            if (syncInProgress) return;
+        // Save data to API with checksum
+        async function saveState(force = false) {
+            if (syncInProgress && !force) return;
+            if (conflictPending && !force) return; // Don't save during conflict
             
             syncInProgress = true;
+            showSyncStatus('syncing', 'Syncing...');
             
-            // Also save to localStorage as backup
+            // Calculate checksum
+            const checksum = await calculateChecksum({
+                completionState,
+                completionTimestamps,
+                notes
+            });
+            
+            // Save to localStorage as backup
             localStorage.setItem('healthTrackerState', JSON.stringify({
                 completionState,
                 completionTimestamps,
@@ -933,17 +1304,21 @@
                     body: JSON.stringify({
                         completionState,
                         completionTimestamps,
-                        notes
+                        notes,
+                        checksum
                     })
                 });
 
                 if (response.ok) {
                     console.log('State synced to server');
+                    showSyncStatus('synced', '✓ Synced');
                 } else {
                     console.error('Failed to sync to server');
+                    showSyncStatus('error', 'Sync failed');
                 }
             } catch (error) {
                 console.error('Error syncing state:', error);
+                showSyncStatus('error', 'Sync failed (offline?)');
             } finally {
                 syncInProgress = false;
             }

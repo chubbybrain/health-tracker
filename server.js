@@ -47,12 +47,19 @@ function initDatabase() {
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS sync_metadata (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        data_checksum TEXT NOT NULL,
+        last_sync TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        item_count INTEGER DEFAULT 0
+    )`);
+
     console.log('Database tables initialized');
 }
 
 // API Routes
 
-// Get all sync data
+// Get all sync data with metadata
 app.get('/api/sync', (req, res) => {
     const completionsPromise = new Promise((resolve, reject) => {
         db.all('SELECT item_key, completed, timestamp FROM completions', [], (err, rows) => {
@@ -68,8 +75,15 @@ app.get('/api/sync', (req, res) => {
         });
     });
 
-    Promise.all([completionsPromise, notesPromise])
-        .then(([completions, notes]) => {
+    const metadataPromise = new Promise((resolve, reject) => {
+        db.get('SELECT data_checksum, last_sync, item_count FROM sync_metadata WHERE id = 1', [], (err, row) => {
+            if (err) reject(err);
+            else resolve(row || null);
+        });
+    });
+
+    Promise.all([completionsPromise, notesPromise, metadataPromise])
+        .then(([completions, notes, metadata]) => {
             const completionState = {};
             const completionTimestamps = {};
             const noteState = {};
@@ -88,7 +102,12 @@ app.get('/api/sync', (req, res) => {
             res.json({
                 completionState,
                 completionTimestamps,
-                notes: noteState
+                notes: noteState,
+                metadata: metadata || {
+                    data_checksum: null,
+                    last_sync: null,
+                    item_count: 0
+                }
             });
         })
         .catch(err => {
@@ -99,10 +118,14 @@ app.get('/api/sync', (req, res) => {
 
 // Save sync data
 app.post('/api/sync', (req, res) => {
-    const { completionState, completionTimestamps, notes } = req.body;
+    const { completionState, completionTimestamps, notes, checksum } = req.body;
 
     if (!completionState) {
         return res.status(400).json({ error: 'Missing completionState' });
+    }
+
+    if (!checksum) {
+        return res.status(400).json({ error: 'Missing checksum' });
     }
 
     const promises = [];
@@ -149,6 +172,24 @@ app.post('/api/sync', (req, res) => {
     }
 
     Promise.all(promises)
+        .then(() => {
+            // Update sync metadata
+            const itemCount = Object.keys(completionState).length + (notes ? Object.keys(notes).length : 0);
+            
+            return new Promise((resolve, reject) => {
+                db.run(
+                    `INSERT INTO sync_metadata (id, data_checksum, last_sync, item_count) 
+                     VALUES (1, ?, CURRENT_TIMESTAMP, ?)
+                     ON CONFLICT(id) DO UPDATE SET 
+                     data_checksum = ?, last_sync = CURRENT_TIMESTAMP, item_count = ?`,
+                    [checksum, itemCount, checksum, itemCount],
+                    (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    }
+                );
+            });
+        })
         .then(() => {
             res.json({ success: true, message: 'Data saved successfully' });
         })
