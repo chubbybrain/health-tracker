@@ -509,7 +509,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.3.0 (Time Override from Notes) • Last Updated: Aug 12, 2026 @ 12:52 UTC</div>
+            <div class="version">Version 2.4.0 (Calendar Navigation + Timestamp Fixes) • Last Updated: Aug 19, 2026 @ 13:15 UTC</div>
         </div>
     </div>
 
@@ -736,18 +736,118 @@
             }
         }
 
-        // Initialize day selector buttons
+        // Get start date (Aug 10, 2026 = Day 1)
+        const PROGRAM_START_DATE = new Date('2026-08-10');
+        
+        // Calculate which day number a given date is (1-14, cycling)
+        function getDateDayNumber(date) {
+            const daysDiff = Math.floor((date - PROGRAM_START_DATE) / (1000 * 60 * 60 * 24)) + 1;
+            if (daysDiff < 1) return null;
+            return ((daysDiff - 1) % scheduleData.meta.total_days) + 1;
+        }
+        
+        // Get date for a given day number relative to today
+        function getDateForDayNumber(targetDayNumber) {
+            const today = new Date();
+            const todayDayNumber = getDateDayNumber(today);
+            
+            // Calculate offset from today
+            let offset = targetDayNumber - todayDayNumber;
+            
+            // Adjust for cycling (e.g., if today is Day 13 and target is Day 2)
+            if (offset < -7) {
+                offset += scheduleData.meta.total_days;
+            } else if (offset > 7) {
+                offset -= scheduleData.meta.total_days;
+            }
+            
+            const targetDate = new Date(today);
+            targetDate.setDate(today.getDate() + offset);
+            return targetDate;
+        }
+        
+        // Initialize day selector with calendar dates centered on today
         function initDaySelector() {
             const container = document.getElementById('day-selector');
-            const totalDays = scheduleData.meta.total_days;
+            const today = new Date();
+            const todayDayNumber = getDateDayNumber(today);
             
-            for (let i = 1; i <= totalDays; i++) {
+            // Show 7 days centered on today (3 before, today, 3 after)
+            const daysToShow = 7;
+            const startOffset = -3;
+            
+            // Add month header
+            const monthHeader = document.createElement('div');
+            monthHeader.style.cssText = 'text-align: center; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem;';
+            monthHeader.textContent = today.toLocaleDateString('en-US', { month: 'long' });
+            container.appendChild(monthHeader);
+            
+            // Create button container
+            const btnContainer = document.createElement('div');
+            btnContainer.style.cssText = 'display: flex; gap: 0.5rem; flex-wrap: wrap;';
+            
+            for (let i = 0; i < daysToShow; i++) {
+                const offset = startOffset + i;
+                const date = new Date(today);
+                date.setDate(today.getDate() + offset);
+                
+                const dayNumber = getDateDayNumber(date);
+                const dayOfMonth = date.getDate();
+                
                 const btn = document.createElement('button');
                 btn.className = 'day-btn';
-                btn.textContent = `Day ${i}`;
-                btn.onclick = () => showDay(i);
-                container.appendChild(btn);
+                btn.textContent = `${dayOfMonth}`;
+                btn.onclick = () => {
+                    showDay(dayNumber);
+                    // Re-render with new date centered
+                    container.innerHTML = '';
+                    initDaySelector();
+                };
+                
+                // Highlight today
+                if (offset === 0) {
+                    btn.style.fontWeight = '700';
+                    btn.style.borderWidth = '3px';
+                }
+                
+                btnContainer.appendChild(btn);
             }
+            
+            container.appendChild(btnContainer);
+            
+            // Update active state
+            updateDaySelectorState();
+        }
+        
+        // Update day selector button states (active/completed)
+        function updateDaySelectorState() {
+            const buttons = document.querySelectorAll('.day-btn');
+            buttons.forEach(btn => {
+                const dayOfMonth = parseInt(btn.textContent);
+                const today = new Date();
+                
+                // Find which date this button represents
+                let matchingDate = null;
+                for (let offset = -3; offset <= 3; offset++) {
+                    const testDate = new Date(today);
+                    testDate.setDate(today.getDate() + offset);
+                    if (testDate.getDate() === dayOfMonth) {
+                        matchingDate = testDate;
+                        break;
+                    }
+                }
+                
+                if (matchingDate) {
+                    const dayNumber = getDateDayNumber(matchingDate);
+                    
+                    btn.classList.remove('active', 'completed');
+                    if (dayNumber === currentDay) {
+                        btn.classList.add('active');
+                    } else if (isDayComplete(dayNumber)) {
+                        btn.classList.add('completed');
+                    }
+                }
+            });
         }
 
         // Show schedule for a specific day
@@ -755,15 +855,8 @@
             currentDay = day;
             localStorage.setItem('currentDay', day); // Save selected day
             
-            // Update day selector buttons
-            document.querySelectorAll('.day-btn').forEach((btn, idx) => {
-                btn.classList.remove('active', 'completed');
-                if (idx + 1 === day) {
-                    btn.classList.add('active');
-                } else if (isDayComplete(idx + 1)) {
-                    btn.classList.add('completed');
-                }
-            });
+            // Update day selector button states
+            updateDaySelectorState();
 
             // Filter schedule items for this day
             const dayItems = scheduleData.schedule.filter(item => 
@@ -843,12 +936,21 @@
 
         // Toggle item completion
         function toggleComplete(key) {
-            const wasCompleted = completionState[key];
             completionState[key] = !completionState[key];
             
             // Set timestamp when checking, remove when unchecking
             if (completionState[key]) {
-                completionTimestamps[key] = new Date().toISOString();
+                // Check if notes already have a time specified
+                const existingNote = notes[key];
+                const parsedTime = parseTimeFromNote(existingNote);
+                
+                if (parsedTime) {
+                    // Use time from note
+                    completionTimestamps[key] = parsedTime;
+                } else {
+                    // Use current time
+                    completionTimestamps[key] = new Date().toISOString();
+                }
             } else {
                 delete completionTimestamps[key];
             }
