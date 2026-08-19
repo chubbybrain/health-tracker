@@ -136,6 +136,14 @@ async function analyzeYesterday() {
                         other: []
                     };
 
+                    // Dopamine pattern tracking
+                    const dopaminePatterns = {
+                        energizing: [],
+                        draining: [],
+                        procrastination: [],
+                        flowState: []
+                    };
+                    
                     completedItems.forEach(item => {
                         const scheduledItem = dayItems.find(d => 
                             `${d.DayNumber}_${d.Time}_${d.Activity}` === item.item_key
@@ -145,6 +153,22 @@ async function analyzeYesterday() {
                         
                         const activity = scheduledItem.Activity.toLowerCase();
                         const note = item.note_text || '';
+                        
+                        // Track dopamine patterns from notes
+                        if (note) {
+                            if (note.includes('✅') || note.toLowerCase().includes('energizing') || note.toLowerCase().includes('focused')) {
+                                dopaminePatterns.energizing.push({ time: scheduledItem.Time, activity: scheduledItem.Activity, note });
+                            }
+                            if (note.includes('❌') || note.toLowerCase().includes('draining') || note.toLowerCase().includes('scattered')) {
+                                dopaminePatterns.draining.push({ time: scheduledItem.Time, activity: scheduledItem.Activity, note });
+                            }
+                            if (note.includes('🔴') || note.toLowerCase().includes('procrastin')) {
+                                dopaminePatterns.procrastination.push({ time: scheduledItem.Time, activity: scheduledItem.Activity, note });
+                            }
+                            if (note.includes('🟢') || note.toLowerCase().includes('flow')) {
+                                dopaminePatterns.flowState.push({ time: scheduledItem.Time, activity: scheduledItem.Activity, note });
+                            }
+                        }
                         
                         if (activity.includes('workout') || activity.includes('cardio') || activity.includes('strength')) {
                             categories.workouts.push({ ...scheduledItem, note });
@@ -160,7 +184,7 @@ async function analyzeYesterday() {
                     });
 
                     // Generate summary text
-                    const summary = generateSummary(stats, delays, categories, itemsWithNotes);
+                    const summary = generateSummary(stats, delays, categories, dopaminePatterns, itemsWithNotes);
 
                     // Save summary to database
                     db.run(
@@ -203,7 +227,7 @@ function convertTo24Hour(timeStr) {
 }
 
 // Generate human-readable summary
-function generateSummary(stats, delays, categories, itemsWithNotes) {
+function generateSummary(stats, delays, categories, dopaminePatterns, itemsWithNotes) {
     let summary = `# Day Summary\n\n`;
     
     // Overall completion
@@ -211,6 +235,86 @@ function generateSummary(stats, delays, categories, itemsWithNotes) {
     summary += `- ✅ Completed: ${stats.completed} / ${stats.totalScheduled} items (${stats.completionRate}%)\n`;
     summary += `- ⏭️ Skipped: ${stats.skipped} items\n`;
     summary += `- 📝 Notes provided: ${stats.notesProvided}\n\n`;
+    
+    // Dopamine Reflection Questions
+    summary += `## 🧠 Dopamine & Focus Reflection\n\n`;
+    
+    // Question 1: Energy patterns
+    if (dopaminePatterns.energizing.length > 0 || dopaminePatterns.draining.length > 0) {
+        summary += `### What gave you energy vs. drained you?\n`;
+        
+        if (dopaminePatterns.energizing.length > 0) {
+            summary += `**✅ Energizing activities (${dopaminePatterns.energizing.length}):**\n`;
+            dopaminePatterns.energizing.forEach(e => {
+                summary += `- ${e.time}: ${e.activity} — *"${e.note}"*\n`;
+            });
+        }
+        
+        if (dopaminePatterns.draining.length > 0) {
+            summary += `**❌ Draining activities (${dopaminePatterns.draining.length}):**\n`;
+            dopaminePatterns.draining.forEach(d => {
+                summary += `- ${d.time}: ${d.activity} — *"${d.note}"*\n`;
+            });
+        }
+        
+        summary += '\n';
+    } else {
+        summary += `### What gave you energy vs. drained you?\n`;
+        summary += `*No energy patterns tracked. Add ✅ (energizing) or ❌ (draining) tags to your notes.*\n\n`;
+    }
+    
+    // Question 2: Procrastination triggers
+    if (dopaminePatterns.procrastination.length > 0) {
+        summary += `### What triggered procrastination today?\n`;
+        dopaminePatterns.procrastination.forEach(p => {
+            summary += `- 🔴 ${p.time}: ${p.activity} — *"${p.note}"*\n`;
+        });
+        summary += '\n';
+    } else {
+        summary += `### What triggered procrastination today?\n`;
+        summary += `*No procrastination triggers logged. Add 🔴 tags when you notice avoidance.*\n\n`;
+    }
+    
+    // Question 3: Flow state wins
+    if (dopaminePatterns.flowState.length > 0) {
+        summary += `### When did you hit flow state?\n`;
+        dopaminePatterns.flowState.forEach(f => {
+            summary += `- 🟢 ${f.time}: ${f.activity} — *"${f.note}"*\n`;
+        });
+        summary += '\n';
+    } else {
+        summary += `### When did you hit flow state?\n`;
+        summary += `*No flow states tracked. Add 🟢 tags when you're locked in and productive.*\n\n`;
+    }
+    
+    // Question 4: Pattern analysis (requires comparing to previous days)
+    summary += `### What pattern repeated from yesterday?\n`;
+    summary += `*Pattern detection coming soon. For now, review your notes manually.*\n\n`;
+    
+    // Question 5: Tomorrow improvement
+    summary += `### What would make tomorrow 10% better?\n`;
+    
+    if (dopaminePatterns.draining.length > dopaminePatterns.energizing.length) {
+        summary += `- ⚠️ You had more draining activities than energizing ones. Schedule breaks differently?\n`;
+    }
+    
+    if (dopaminePatterns.procrastination.length > 0) {
+        const procrastTimes = dopaminePatterns.procrastination.map(p => parseInt(p.time.split(':')[0]));
+        const avgProcrastHour = Math.round(procrastTimes.reduce((a, b) => a + b, 0) / procrastTimes.length);
+        summary += `- 🔴 Procrastination happened around ${avgProcrastHour}:00. Schedule hardest tasks before then.\n`;
+    }
+    
+    if (dopaminePatterns.flowState.length > 0) {
+        const flowTimes = dopaminePatterns.flowState.map(f => parseInt(f.time.split(':')[0]));
+        const avgFlowHour = Math.round(flowTimes.reduce((a, b) => a + b, 0) / flowTimes.length);
+        summary += `- 🟢 You hit flow around ${avgFlowHour}:00. Block off that time for deep work tomorrow.\n`;
+    }
+    
+    if (stats.completionRate < 70) {
+        summary += `- ⚠️ Yesterday's completion rate was ${stats.completionRate}%. Pick ONE thing to focus on tomorrow.\n`;
+    }
+    
+    summary += '\n';
     
     // Timing analysis
     if (delays.length > 0) {
