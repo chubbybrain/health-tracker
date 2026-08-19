@@ -58,22 +58,24 @@
 
         .day-selector {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.25rem;
             margin-bottom: 1.5rem;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            overflow-x: auto;
         }
 
         .day-btn {
             flex: 1;
-            min-width: 80px;
-            padding: 0.75rem;
+            min-width: 45px;
+            padding: 0.5rem 0.25rem;
             border: 2px solid var(--border);
             background: var(--card-bg);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
         }
 
         .day-btn:hover {
@@ -509,7 +511,7 @@
         </div>
 
         <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 0.75rem; border-top: 1px solid var(--border); margin-top: 2rem;">
-            <div class="version">Version 2.4.0 (Calendar Navigation + Timestamp Fixes) • Last Updated: Aug 19, 2026 @ 13:15 UTC</div>
+            <div class="version">Version 2.4.1 (Mobile Calendar Layout) • Last Updated: Aug 19, 2026 @ 13:30 UTC</div>
         </div>
     </div>
 
